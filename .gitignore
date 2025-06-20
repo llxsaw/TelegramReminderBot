@@ -1,0 +1,49 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environment
+venv/
+.env/
+.env.bak/
+*.env
+
+# PyCharm project settings
+.idea/
+
+# PyInstaller
+dist/
+build/
+
+# Unit test / coverage
+.pytest_cache/
+.coverage
+.tox/
+
+# MyPy / Pylint
+.mypy_cache/
+.pylint.d/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# macOS
+.DS_Store
+
+# Logs
+*.log
+
+# Python egg metadata
+*.egg-info/
+.eggs/
+
+# Local databases and config files (твои файлы)
+config.py
+task.db
+
+# Node.js (если используется)
+node_modules/
+
+# Cython
+*.so
