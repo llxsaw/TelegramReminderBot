@@ -10,6 +10,8 @@ from aiogram.filters import Command, StateFilter, state
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import Message, ReplyKeyboardRemove
+from aiogram import F
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 import database as db
@@ -150,13 +152,84 @@ async def load_pending_tasks():
         reminder_time = notify_time - datetime.timedelta(hours=1)
         if status == 'pending' and reminder_time > now:
             scheduler.add_job(
-                send_reminder,
+                send_notification,
                 'date',
                 run_date=reminder_time,
-                args=[user_id, task_text, task_id],
-                id=f"reminder_{task_id}"
+                args=(user_id, task_text, task_id),
+                id=f"notification_{task_id}"
             )
             logging.info(f"Запланировано предварительное напоминание для задачи #{task_id} на {reminder_time}")
+
+
+@router.message(Command('tasks'))
+async def cmd_list_tasks(message: Message):
+    rows = db.get_user_tasks(message.from_user.id)
+    if not rows:
+        return await message.answer('📭 У вас нет активных задач')
+
+    buttons = []
+    for t in rows:
+        label = f"{t['task_text']} — {t['notify_time'][:16]}"
+        buttons.append([
+            InlineKeyboardButton(text="🔍 " + label, callback_data=f"view:{t['id']}"),
+            InlineKeyboardButton(text="✅ Сделано", callback_data=f"done:{t['id']}"),
+            InlineKeyboardButton(text="🗑 Удалить", callback_data=f"delete:{t['id']}")
+        ])
+
+    kb = InlineKeyboardMarkup(inline_keyboard=buttons)
+
+    await message.answer("Вот Ваши задачи:", reply_markup=kb)
+    return None
+
+
+@router.callback_query(F.data == 'noop')
+async def cb_noop(call: CallbackQuery):
+    await call.answer()
+
+
+@router.callback_query(F.data.startswith('done:'))
+async def cb_done(call: CallbackQuery):
+    task_id = int(call.data.split(':')[1])
+    db.mark_task_done(task_id)
+    await call.message.edit_text("✅ Задача отмечена как выполненная.")
+    await call.answer("Отметил как готовое")
+
+
+@router.callback_query(F.data.startswith('delete:'))
+async def cb_delete(call: CallbackQuery):
+    task_id = int(call.data.split(":")[1])
+    await call.message.edit_text(
+        "⚠️ Вы точно хотите удалить задачу?",
+        reply_markup=InlineKeyboardMarkup().add(
+            InlineKeyboardButton(text="Да, удалить", callback_data=f"confirm:delete:{task_id}"),
+            InlineKeyboardButton(text="Нет", callback_data="noop"),
+        )
+    )
+
+
+@router.callback_query(F.data.startswith('confirm_delete:'))
+async def cb_confirm_delete(call: CallbackQuery):
+    task_id = int(call.data.split(':')[1])
+    db.delete_task(task_id)
+    await call.message.edit_text("🗑 Задача удалена.")
+    await call.answer("Удалено")
+
+
+@router.callback_query(F.data.startswith('view:'))
+async def cb_view(call: CallbackQuery):
+    task_id = int(call.data.split(":")[1])
+    row = next(r for r in db.get_user_tasks(call.from_user.id) if r ["id"] == task_id)
+    text = (
+        f"📝 <b>Задача</b>: {row['task_text']}\n"
+        f"⏰ <b>Напоминание</b>: {row['notify_time']}\n"
+        f"ℹ️ <b>Статус</b>: {row['status']}"
+    )
+    kb = InlineKeyboardMarkup().add(
+        InlineKeyboardButton(text="✏️ Редактировать", callback_data=f"edit:{task_id}"),
+        InlineKeyboardButton(text="🔙 Назад", callback_data="noop")
+    )
+    await call.message.edit_text(text, parse_mode="HTML", reply_markup=kb)
+    await call.answer()
 
 
 async def main():
@@ -170,6 +243,7 @@ if __name__ == '__main__':
         asyncio.run(main())
     except (KeyboardInterrupt, SystemExit):
         logging.info("Бот Остановлен")
+
 
 
 

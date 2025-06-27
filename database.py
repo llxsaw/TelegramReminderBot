@@ -53,3 +53,32 @@ def update_task_status(task_id: int, status: str):
     conn.commit()
     conn.close()
 
+
+def get_user_tasks(user_id: int):
+    """
+        Return all non-done tasks for user
+    """
+    conn = sqlite3.connect('tasks.db')
+    conn.row_factory = sqlite3.Row
+    cur = conn.cursor()
+    cur.execute("""
+        SELECT * FROM tasks
+        WHERE user_id = ? AND status != 'done' 
+        ORDER BY notify_time 
+    """, (user_id,))
+    rows = cur.fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+
+def delete_task(task_id: int):
+    """Permanently remove task from list"""
+    conn = sqlite3.connect('tasks.db')
+    cur = conn.cursor()
+    cur.execute("DELETE FROM tasks WHERE id = ?", (task_id,))
+    conn.commit()
+    conn.close()
+
+
+def mark_task_done(task_id: int):
+    update_task_status(task_id, status='done')
