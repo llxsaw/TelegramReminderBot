@@ -1,13 +1,16 @@
-# scheduler/jobs.py
+# scheduler/jobs.py\
+import os
 import datetime
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from aiogram import Bot
-from config import BOT_TOKEN
 import database.database as db
+from config import BOT_TOKEN, TIMEZONE
+from aiogram import Bot
+
 
 bot = Bot(token=BOT_TOKEN)
 
-scheduler = AsyncIOScheduler(timezone="Europe/Kyiv")
+scheduler = AsyncIOScheduler(timezone=TIMEZONE)
 
 
 async def send_reminder(user_id: int, task_text: str, task_id: int):

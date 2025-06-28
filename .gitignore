@@ -39,8 +39,7 @@ build/
 .eggs/
 
 # Local databases and config files (твои файлы)
-config.py
-task.db
+tasks.db
 
 # Node.js (если используется)
 node_modules/

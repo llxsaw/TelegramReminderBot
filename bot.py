@@ -1,15 +1,16 @@
 # bot.py
-import asyncio, logging
+import asyncio
+import logging
+
 from aiogram import Bot, Dispatcher
-from config import BOT_TOKEN
+from config import BOT_TOKEN, TIMEZONE
 from database.database import init_db
+from handlers.add_task import router as add_router
+from handlers.base import router as base_router
+from handlers.edit_task import router as edit_router
+from handlers.tasks import router as tasks_router
 from scheduler.jobs import scheduler, load_pending_tasks
 
-# import all routers
-from handlers.base import router as base_router
-from handlers.add_task import router as add_router
-from handlers.tasks import router as tasks_router
-from handlers.edit_task import router as edit_router
 
 logging.basicConfig(level=logging.INFO)
 bot = Bot(token=BOT_TOKEN)
