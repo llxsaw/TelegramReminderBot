@@ -93,7 +93,10 @@ async def cb_done(call: CallbackQuery) -> None:
 
     # cancel scheduled jobs if any
     for jid in (f"notification_{task_id}", f"reminder_{task_id}"):
-        scheduler.remove_job(jid, jobstore=None, remove_all_jobs=False)
+        try:
+            scheduler.remove_job(jid)
+        except Exception:
+            pass
 
     await call.message.edit_text("✅ Задача отмечена как выполненная.")
     await call.answer("Отмечено сделано")
@@ -117,7 +120,10 @@ async def cb_confirm_delete(call: CallbackQuery) -> None:
 
     # cancel scheduled jobs if any
     for jid in (f"notification_{task_id}", f"reminder_{task_id}"):
-        scheduler.remove_job(jid, jobstore=None, remove_all_jobs=False)
+        try:
+            scheduler.remove_job(jid)
+        except Exception:
+            pass
 
     await call.message.edit_text("🗑 Задача удалена.")
     await call.answer("Удалено")
